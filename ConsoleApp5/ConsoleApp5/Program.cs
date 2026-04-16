@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Threading;
 
 namespace Programm
 {
-    public class Program 
-    {      
+    public class Program
+    {
+
         static Dictionary<(Type, string), Func<double, double, double>> calc = new Dictionary<(Type, string), Func<double, double, double>>
         {
             [(typeof(double), "+")] = (a, b) => a + b,
@@ -16,58 +19,64 @@ namespace Programm
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Универсальный калькулятор запущен!");
-            Console.WriteLine("Введите пример через пробел (например: 10 + 5) или 'exit' для выхода:");
+
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            Console.WriteLine("--- Универсальный калькулятор запущен ---");
+            Console.WriteLine("Можно писать: 10+5, 10 / 0.5, 100%10");
+            Console.WriteLine("Для выхода напишите 'exit'");
 
             while (true)
             {
-                Console.Write("> ");
+                Console.Write("\n> ");
                 string input = Console.ReadLine();
 
+                if (string.IsNullOrWhiteSpace(input)) continue;
                 if (input.ToLower() == "exit") break;
 
                 try
                 {
-                   
-                    string[] parts = input.Split(' ');
 
-                    if (parts.Length < 3)
+                    char[] operators = { '+', '-', '*', '/', '%' };
+                    int opIndex = input.IndexOfAny(operators);
+
+                    if (opIndex == -1)
                     {
-                        Console.WriteLine("Ошибка! Формат: Число Знак Число");
+                        Console.WriteLine("Ошибка: Знак операции не найден.");
                         continue;
                     }
 
-                    
-                    double n1 = Convert.ToDouble(parts[0]);
-                    string op = parts[1];
-                    double n2 = Convert.ToDouble(parts[2]);
 
-                   
+                    string s1 = input.Substring(0, opIndex).Trim();
+                    string op = input[opIndex].ToString();
+                    string s2 = input.Substring(opIndex + 1).Trim();
+
+
+                    double n1 = Convert.ToDouble(s1);
+                    double n2 = Convert.ToDouble(s2);
+
                     Execute(n1, n2, op);
                 }
                 catch
                 {
-                    Console.WriteLine("Ошибка: Введите корректные числа через пробел.");
+                    Console.WriteLine("Ошибка: Неверный формат числа или примера.");
                 }
             }
         }
 
-        
         static void Execute(double val1, double val2, string op)
         {
-            double a = Convert.ToDouble(val1);
-            double b = Convert.ToDouble(val2);
 
             var key = (typeof(double), op);
 
             if (calc.TryGetValue(key, out var action))
             {
-                double result = action(a, b);
-                Console.WriteLine($"Результат: {a} {op} {b} = {result}");
+                double result = action(val1, val2);
+                Console.WriteLine($"Результат: {val1} {op} {val2} = {result}");
             }
             else
             {
-                Console.WriteLine($"Операция {op} не найдена!");
+                Console.WriteLine($"Операция '{op}' не поддерживается!");
             }
         }
     }
